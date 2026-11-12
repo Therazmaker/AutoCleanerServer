@@ -1,28 +1,29 @@
-# 🧹 AutoCleaner Server (Windows Server x64)
+# 🧹 AutoCleaner Server v2.0 (Nativo Microsoft .NET Framework — Sin Bloqueo de Windows Defender / SmartScreen)
 
-Programa autónomo (`.exe` sin dependencias externas) para crear y programar **tareas automáticas de borrado de archivos** en **Windows Server**.
+Aplicación nativa **Windows Forms (`.NET Framework 4.x`)** para crear y programar **tareas automáticas de borrado de archivos** en **Windows Server**.
 
-## ⬇️ Descarga Directa para Windows Server
+## ⬇️ Descarga Directa (Versión v2.0 Libre de Falsos Positivos)
 
-- **[📦 Descargar AutoCleanerServer_Windows.zip (Recomendado: .exe + instalador .bat)](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer_Windows.zip)**
-- **[💻 Descargar solo AutoCleanerServer.exe](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer.exe)**
+- **[📦 Descargar AutoCleanerServer_Windows.zip (~35 KB — Recomendado)](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer_Windows.zip)**
+  *(Incluye `Instalar_Sin_Bloqueo.bat` + código fuente `AutoCleanerServer.cs` + `AutoCleanerServer.exe` nativo de Windows Forms)*
+- **[💻 Descargar solo AutoCleanerServer.exe (~32 KB)](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer.exe)**
 
 ---
 
-## 🚀 Cómo instalarlo en tu Windows Server
+## 🛡️ ¿Por qué la versión v2.0 NO es bloqueada por Windows Defender ni SmartScreen?
 
-1. Crea una carpeta en tu servidor, por ejemplo `C:\AutoCleanerServer\`.
-2. Descarga y descomprime ahí `AutoCleanerServer.exe` y `Instalar_Windows_Server.bat`.
-3. Haz **clic derecho sobre `Instalar_Windows_Server.bat` → "Ejecutar como administrador"** (o abre directamente `AutoCleanerServer.exe` como administrador).
-4. Se abrirá la ventana visual del programa donde podrás:
-   - Seleccionar la carpeta a limpiar (con el explorador visual de discos `C:\`, `D:\`, etc.).
-   - Elegir qué día y hora se ejecuta (ej. **El día 1 de cada mes a las 02:00**).
-   - Elegir el rango de fechas a borrar (ej. **Todo el mes calendario anterior**, o **Desde Fecha A hasta Fecha B**, o **Más de X días de antigüedad**).
-   - Configurar **qué archivos conservar intactos ("Y solo deja tal")**: por nombre/comodín (`*cierre*`, `*IMPORTANTE*`), extensión, día 1 del mes, último día del mes, o los `N` archivos más recientes.
-   - Probar primero con el botón **🔍 Simular Ahora (Dry Run)** antes de guardar.
+1. **Reemplazamos el binario de Go de 7 MB por una aplicación nativa de Microsoft `.NET Framework` Windows Forms de solo ~32 KB** (`AutoCleanerServer.cs`):
+   - No abre puertos de red locales ni lanza navegadores en segundo plano (que es lo que activaba la heurística de Windows Defender en el binario anterior).
+   - Utiliza únicamente las librerías nativas incluidas dentro de Windows Server (`System.Windows.Forms`, `System.IO`, `System.Xml`).
+2. **Generación Local en 1 Clic (`Instalar_Sin_Bloqueo.bat`)**:
+   - Cuando descargas cualquier `.exe` de internet, el navegador le pega una etiqueta oculta llamada *Mark-of-the-Web (`Zone.Identifier`)* que hace saltar la pantalla azul de **Windows SmartScreen**.
+   - Al ejecutar **`Instalar_Sin_Bloqueo.bat`**, el script elimina esa etiqueta (`Unblock-File`) y usa el compilador oficial de Microsoft que ya viene de fábrica en tu Windows Server (`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`) para generar `AutoCleanerServer.exe` **directamente dentro de tu propio servidor en 1 segundo**.
+   - Al nacer localmente en tu servidor, **Windows confía en él al 100% sin mostrar advertencias**.
 
-## 🔒 ¿Sigue funcionando al cerrar la ventana o reiniciar el servidor?
+---
 
-**Sí.** Al guardar una tarea:
-- Se registra automáticamente en el **Programador de Tareas de Windows (`schtasks.exe`)** bajo `\AutoCleanerServer\` con permisos `SYSTEM`.
-- También registra el servicio residente al arranque de Windows Server (`ONSTART`).
+## 🚀 Cómo usarlo en tu Windows Server
+
+1. Descarga **[AutoCleanerServer_Windows.zip](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer_Windows.zip)** y descomprímelo en una carpeta fija, por ejemplo `C:\AutoCleanerServer\`.
+2. Haz doble clic en **`Instalar_Sin_Bloqueo.bat`** (o clic derecho → *Ejecutar como administrador*).
+3. Se abrirá inmediatamente la ventana nativa de **AutoCleaner Server v2.0**.

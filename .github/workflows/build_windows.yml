@@ -1,0 +1,40 @@
+name: Build Native Windows .NET Executable
+
+on:
+  push:
+    paths:
+      - 'AutoCleanerServer.cs'
+      - 'Instalar_Sin_Bloqueo.bat'
+      - '.github/workflows/build_windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile with built-in Microsoft .NET Framework csc.exe
+        shell: cmd
+        run: |
+          C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /target:winexe /optimize+ /out:AutoCleanerServer.exe /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Xml.dll AutoCleanerServer.cs
+          dir AutoCleanerServer.exe
+
+      - name: Package AutoCleanerServer_Windows.zip
+        shell: pwsh
+        run: |
+          if (Test-Path AutoCleanerServer_Windows.zip) { Remove-Item AutoCleanerServer_Windows.zip -Force }
+          Compress-Archive -Path AutoCleanerServer.exe, AutoCleanerServer.cs, Instalar_Sin_Bloqueo.bat, README.md -DestinationPath AutoCleanerServer_Windows.zip -Force
+          Get-Item AutoCleanerServer.exe, AutoCleanerServer_Windows.zip | Select-Object Name, Length
+
+      - name: Commit compiled native .NET executable and ZIP back to main
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add AutoCleanerServer.exe AutoCleanerServer_Windows.zip
+          git diff --staged --quiet || (git commit -m "Build native .NET Windows Forms AutoCleanerServer.exe [skip ci]" && git push origin HEAD:main)
