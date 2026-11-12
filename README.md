@@ -4,8 +4,8 @@ Programa autónomo (`.exe` sin dependencias externas) para crear y programar **t
 
 ## ⬇️ Descarga Directa para Windows Server
 
-- **[📦 Descargar AutoCleanerServer_Windows.zip (Recomendado: .exe + instalador .bat)](https://github.com/Therazmaker/AutoCleanerServer/releases/download/v1.0.0/AutoCleanerServer_Windows.zip)**
-- **[💻 Descargar solo AutoCleanerServer.exe](https://github.com/Therazmaker/AutoCleanerServer/releases/download/v1.0.0/AutoCleanerServer.exe)**
+- **[📦 Descargar AutoCleanerServer_Windows.zip (Recomendado: .exe + instalador .bat)](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer_Windows.zip)**
+- **[💻 Descargar solo AutoCleanerServer.exe](https://github.com/Therazmaker/AutoCleanerServer/raw/main/AutoCleanerServer.exe)**
 
 ---
 
