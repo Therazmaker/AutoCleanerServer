@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoCleaner Server — Programador de Borrado Inteligente para Windows Server</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-card: #263349;
+      --bg-input: #0f172a;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.14);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top Header */
+    .topbar {
+      background: #0b1120;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+    .brand h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+    .brand p { font-size: 12px; color: var(--text-muted); }
+    .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* Navigation Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-panel);
+      padding: 8px 22px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 10px 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: #60a5fa;
+      border-bottom-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.08);
+      border-radius: 6px 6px 0 0;
+    }
+
+    /* Main Content Container */
+    .container {
+      max-width: 1320px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 22px 40px;
+      flex: 1;
+    }
+
+    /* Stat Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px 18px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-secondary { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: #334155; }
+    .btn-warning { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
+    .btn-warning:hover { background: var(--warning); color: #0f172a; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* Cards & Layout */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+    /* Natural Language Summary Banner */
+    .nl-summary {
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.12));
+      border: 1px solid rgba(96, 165, 250, 0.4);
+      border-radius: 9px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+    .nl-summary strong { color: #93c5fd; }
+    .nl-summary .keep-highlight { color: #6ee7b7; font-weight: 700; }
+    .nl-summary .del-highlight { color: #fca5a5; font-weight: 700; }
+
+    /* Form Controls */
+    .form-section {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .form-section-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12.5px; font-weight: 600; color: #cbd5e1; }
+    .field small { font-size: 11.5px; color: var(--text-muted); }
+    input[type="text"], input[type="number"], input[type="date"], input[type="time"], select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25); }
+    .input-group { display: flex; gap: 8px; }
+    .input-group input { flex: 1; }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px 0;
+    }
+    .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
+
+    /* Task Cards */
+    .task-list { display: flex; flex-direction: column; gap: 12px; }
+    .task-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 15px 18px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .badge-blue { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .badge-green { background: var(--success-bg); color: #6ee7b7; }
+    .badge-red { background: var(--danger-bg); color: #fca5a5; }
+    .badge-yellow { background: var(--warning-bg); color: #fcd34d; }
+    .badge-gray { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+
+    /* Table for Simulation & Logs */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 440px;
+      overflow-y: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td {
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #0f172a;
+      color: var(--text-muted);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .mono { font-family: Consolas, "Courier New", monospace; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+    .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .dir-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.45);
+    }
+    .dir-item:hover { background: var(--bg-card); }
+    .hidden { display: none !important; }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1e293b;
+      border: 1px solid #3b82f6;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      z-index: 200;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">🧹</div>
+      <div>
+        <h1>AutoCleaner Server</h1>
+        <p id="serverInfoText">Gestor de Tareas de Borrado Automático para Windows Server</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a href="/download/AutoCleanerServer.exe" download="AutoCleanerServer.exe" class="btn btn-success" id="downloadExeBtn">
+        ⬇️ Descargar AutoCleanerServer.exe (Windows x64)
+      </a>
+      <button class="btn btn-warning" onclick="createDemoScenario()">
+        🧪 Crear Carpeta Demo + Ejemplo Día 1 del Mes
+      </button>
+      <button class="btn btn-primary" onclick="openNewTaskEditor()">
+        ➕ Nueva Tarea de Borrado
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" id="tabBtn-dashboard" onclick="switchTab('dashboard')">
+      📋 Tareas Programadas
+    </button>
+    <button class="tab-btn" id="tabBtn-editor" onclick="switchTab('editor')">
+      ⚙️ Crear / Editar Tarea + Simulador
+    </button>
+    <button class="tab-btn" id="tabBtn-history" onclick="switchTab('history')">
+      📜 Historial y Logs de Borrado
+    </button>
+    <button class="tab-btn" id="tabBtn-winserver" onclick="switchTab('winserver')">
+      🖥️ Integración Windows Server (schtasks)
+    </button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- TAB 1: DASHBOARD & TASKS -->
+    <section id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Tareas Configuradas</div>
+          <div class="stat-value" id="statTotalTasks">0</div>
+          <div class="stat-sub" id="statActiveTasks">0 activas programadas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Archivos Borrados (Histórico)</div>
+          <div class="stat-value" id="statDeletedFiles">0</div>
+          <div class="stat-sub">En ejecuciones reales</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Espacio Liberado Total</div>
+          <div class="stat-value" id="statFreedSpace">0 B</div>
+          <div class="stat-sub">Limpieza acumulada en disco</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Motor en Segundo Plano</div>
+          <div class="stat-value" style="color: #6ee7b7; font-size: 18px;">● Activo</div>
+          <div class="stat-sub" id="statServerClock">Verificando cada minuto + schtasks</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📂 Tus Tareas de Borrado</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Actualizar</button>
+            <button class="btn btn-primary btn-sm" onclick="openNewTaskEditor()">➕ Crear Tarea</button>
+          </div>
+        </div>
+        <div id="tasksContainer" class="task-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: TASK EDITOR & LIVE DRY-RUN SIMULATOR -->
+    <section id="tab-editor" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title" id="editorTitle">⚙️ Configurar Tarea de Borrado</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('dashboard')">← Volver al listado</button>
+          </div>
+        </div>
+
+        <!-- Natural language summary of the current rule -->
+        <div class="nl-summary" id="nlRuleSummary">
+          Configura los campos de abajo para ver el resumen exacto de la regla.
+        </div>
+
+        <input type="hidden" id="task_id" value="" />
+
+        <!-- STEP 1: Folder & Name -->
+        <div class="form-section">
+          <div class="form-section-title">1️⃣ Nombre de la Tarea y Carpeta a Limpiar</div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Nombre identificativo de la tarea *</label>
+              <input type="text" id="task_name" placeholder="Ej. Limpieza Mensual Backups Mes Anterior" oninput="updateSummary()" />
+            </div>
+            <div class="field">
+              <label>Ruta de la carpeta en el Servidor *</label>
+              <div class="input-group">
+                <input type="text" id="folder_path" class="mono" placeholder="Ej. D:\Backups\Mensuales o C:\Logs" oninput="updateSummary()" />
+                <button type="button" class="btn btn-secondary" onclick="openFolderBrowser()">📁 Explorar...</button>
+              </div>
+              <small>Puedes escribir o pegar una ruta local (<code>C:\...</code>, <code>D:\...</code>) o de red (<code>\\Servidor\Carpeta</code>), o usar el botón Explorar.</small>
+            </div>
+          </div>
+          <div style="margin-top: 12px; display:flex; gap: 22px; flex-wrap: wrap;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="include_subfolders" onchange="updateSummary()" />
+              Incluir archivos dentro de subcarpetas
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="remove_empty_folders" onchange="updateSummary()" />
+              Borrar subcarpetas que queden vacías
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="task_enabled" checked onchange="updateSummary()" />
+              Tarea habilitada (activa)
+            </label>
+          </div>
+        </div>
+
+        <!-- STEP 2: Schedule ("Qué día y a qué hora se ejecuta") -->
+        <div class="form-section">
+          <div class="form-section-title">2️⃣ ¿Cuándo se debe ejecutar el borrado? (Programación)</div>
+          <div class="grid-3">
+            <div class="field">
+              <label>Frecuencia de ejecución</label>
+              <select id="schedule_type" onchange="onScheduleTypeChange()">
+                <option value="monthly">Mensual (Ej. El día 1 de cada mes)</option>
+                <option value="weekly">Semanal (Un día de la semana)</option>
+                <option value="daily">Diario (Todos los días)</option>
+                <option value="once">Una fecha específica</option>
+                <option value="manual">Solo ejecución manual</option>
+              </select>
+            </div>
+
+            <div class="field" id="wrap_day_of_month">
+              <label>Día del mes en que se ejecuta</label>
+              <select id="day_of_month" onchange="updateSummary()">
+                <option value="1">El día 1 de cada mes (Primero de mes)</option>
+                <option value="2">El día 2 de cada mes</option>
+                <option value="5">El día 5 de cada mes</option>
+                <option value="10">El día 10 de cada mes</option>
+                <option value="15">El día 15 de cada mes (Quincena)</option>
+                <option value="20">El día 20 de cada mes</option>
+                <option value="25">El día 25 de cada mes</option>
+                <option value="28">El día 28 de cada mes</option>
+                <option value="0">El último día de cada mes</option>
+              </select>
+            </div>
+
+            <div class="field hidden" id="wrap_day_of_week">
+              <label>Día de la semana</label>
+              <select id="day_of_week" onchange="updateSummary()">
+                <option value="1">Lunes</option>
+                <option value="2">Martes</option>
+                <option value="3">Miércoles</option>
+                <option value="4">Jueves</option>
+                <option value="5">Viernes</option>
+                <option value="6">Sábado</option>
+                <option value="0">Domingo</option>
+              </select>
+            </div>
+
+            <div class="field hidden" id="wrap_once_date">
+              <label>Fecha de ejecución única</label>
+              <input type="date" id="once_date" onchange="updateSummary()" />
+            </div>
+
+            <div class="field" id="wrap_run_time">
+              <label>Hora de ejecución (Formato 24h)</label>
+              <input type="time" id="run_time" value="02:00" onchange="updateSummary()" />
+            </div>
+          </div>
+          <div style="margin-top: 10px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="sync_win_task" checked onchange="updateSummary()" />
+              Registrar automáticamente en el <strong>Programador de Tareas de Windows Server (<code>schtasks.exe</code>)</strong> para que corra aunque cierres la ventana
+            </label>
+          </div>
+        </div>
+
+        <!-- STEP 3: Date Filter ("Archivos que tengan la fecha tal hasta tal") -->
+        <div class="form-section">
+          <div class="form-section-title">3️⃣ ¿Qué fechas de archivos quieres BORRAR? ("Que tengan la fecha tal hasta tal")</div>
+          <div class="grid-3">
+            <div class="field">
+              <label>Regla de fechas a borrar</label>
+              <select id="date_rule_type" onchange="onDateRuleChange()">
+                <option value="prev_month">Del mes calendario anterior (Automático cada mes)</option>
+                <option value="date_range">Rango de fechas específicas (Desde fecha A hasta fecha B)</option>
+                <option value="older_than_days">Por antigüedad (Archivos con más de X días)</option>
+                <option value="current_month_days">Rango de días del mes actual</option>
+                <option value="all_dates">Cualquier fecha (Todos los archivos)</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>¿Qué fecha del archivo evaluar?</label>
+              <select id="date_field" onchange="updateSummary()">
+                <option value="modified">Fecha de Modificación (Recomendado)</option>
+                <option value="created">Fecha de Creación en Windows</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sub-options for prev_month or current_month_days -->
+          <div id="wrap_prev_month" class="grid-2" style="margin-top: 12px;">
+            <div class="field">
+              <label>Desde el día del mes</label>
+              <input type="number" id="prev_month_day_from" min="1" max="31" value="1" oninput="updateSummary()" />
+              <small>Ej. <code>1</code> = desde el día 1 del mes anterior.</small>
+            </div>
+            <div class="field">
+              <label>Hasta el día del mes</label>
+              <input type="number" id="prev_month_day_to" min="1" max="31" value="31" oninput="updateSummary()" />
+              <small>Ej. <code>31</code> = hasta el último día del mes anterior (o pon <code>25</code> si solo quieres borrar del 1 al 25).</small>
+            </div>
+          </div>
+
+          <!-- Sub-options for fixed date_range -->
+          <div id="wrap_date_range" class="grid-2 hidden" style="margin-top: 12px;">
+            <div class="field">
+              <label>Fecha Inicial a borrar (Desde)</label>
+              <input type="date" id="date_from" onchange="updateSummary()" />
+            </div>
+            <div class="field">
+              <label>Fecha Final a borrar (Hasta)</label>
+              <input type="date" id="date_to" onchange="updateSummary()" />
+            </div>
+          </div>
+
+          <!-- Sub-options for older_than_days -->
+          <div id="wrap_older_days" class="grid-2 hidden" style="margin-top: 12px;">
+            <div class="field">
+              <label>Borrar archivos con más de X días de antigüedad</label>
+              <input type="number" id="older_than_days" min="1" max="3650" value="30" oninput="updateSummary()" />
+              <small>Ej. <code>30</code> borra todo archivo cuya fecha tenga más de 30 días respecto al día de ejecución.</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Inclusion & Retention ("Y solo deja tal") -->
+        <div class="form-section">
+          <div class="form-section-title">4️⃣ Filtros y Reglas de Retención ("Y SOLO DEJA TAL intacto")</div>
+
+          <div class="grid-2" style="margin-bottom: 14px;">
+            <div class="field">
+              <label>Filtrar qué extensiones borrar (Opcional)</label>
+              <input type="text" id="target_extensions" placeholder="Vacío = TODAS. Ej: .log, .bak, .tmp" oninput="updateSummary()" />
+              <small>Déjalo vacío para borrar cualquier tipo de archivo, o separa por comas.</small>
+            </div>
+            <div class="field">
+              <label>Filtrar qué nombres borrar (Opcional)</label>
+              <input type="text" id="target_name_patterns" placeholder="Vacío = TODOS. Ej: backup_*, log_*" oninput="updateSummary()" />
+              <small>Usa <code>*</code> como comodín si solo quieres atacar ciertos nombres.</small>
+            </div>
+          </div>
+
+          <div style="border-top: 1px dashed var(--border); padding-top: 14px; margin-top: 6px;">
+            <div style="font-size:13px; font-weight:700; color:#6ee7b7; margin-bottom:10px;">
+              🛡️ Reglas de Protección — ¿Qué archivos NUNCA se deben borrar ("Solo deja tal")?
+            </div>
+
+            <div class="grid-3">
+              <div class="field">
+                <label>Dejar intactos por nombre o patrón</label>
+                <input type="text" id="keep_name_patterns" placeholder="Ej: *cierre*, *IMPORTANTE*, nomina*" oninput="updateSummary()" />
+                <small>Cualquier archivo que coincida se salvará.</small>
+              </div>
+              <div class="field">
+                <label>Dejar intactas estas extensiones</label>
+                <input type="text" id="keep_extensions" placeholder="Ej: .xlsx, .pdf, .exe" oninput="updateSummary()" />
+                <small>Estas extensiones jamás se tocarán.</small>
+              </div>
+              <div class="field">
+                <label>Dejar intactos los de estos días del mes</label>
+                <input type="text" id="keep_days_of_month" placeholder="Ej: 1, 15, 30" oninput="updateSummary()" />
+                <small>Ej. Pon <code>15</code> para dejar intactos los archivos del día 15.</small>
+              </div>
+            </div>
+
+            <div class="grid-3" style="margin-top: 12px;">
+              <div class="field">
+                <label>Dejar siempre los N archivos más recientes</label>
+                <input type="number" id="keep_newest_count" min="0" max="1000" value="0" oninput="updateSummary()" />
+                <small>Ej. Pon <code>3</code> para conservar siempre los 3 más nuevos.</small>
+              </div>
+              <div class="field">
+                <label>Proteger archivos de los últimos X días</label>
+                <input type="number" id="keep_recent_days" min="0" max="3650" value="0" oninput="updateSummary()" />
+                <small>Ej. Pon <code>7</code> para no tocar nada de la última semana.</small>
+              </div>
+              <div class="field">
+                <label>Dejar intacto un rango de fechas específico</label>
+                <div style="display:flex; gap:6px;">
+                  <input type="date" id="keep_date_from" title="Conservar desde fecha" onchange="updateSummary()" style="width:50%;" />
+                  <input type="date" id="keep_date_to" title="Conservar hasta fecha" onchange="updateSummary()" style="width:50%;" />
+                </div>
+                <small>Si un archivo está entre estas 2 fechas, se conserva.</small>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; display:flex; gap: 22px; flex-wrap: wrap;">
+              <label class="checkbox-row">
+                <input type="checkbox" id="keep_first_of_month" onchange="updateSummary()" />
+                Conservar siempre los archivos del <strong>día 1 de cada mes</strong>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="keep_last_of_month" onchange="updateSummary()" />
+                Conservar siempre los archivos del <strong>último día del mes (cierre de mes)</strong>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top: 16px;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-warning" onclick="simulateCurrentEditorTask()">
+              🔍 Simular Ahora (Dry Run - No borra nada)
+            </button>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('dashboard')">Cancelar</button>
+            <button type="button" class="btn btn-success" onclick="saveTaskFromEditor()">
+              💾 Guardar Tarea Programada
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulation Preview Output Panel -->
+      <div class="panel hidden" id="simulationResultPanel">
+        <div class="panel-header">
+          <div class="panel-title" id="simTitle">🔍 Resultado de la Simulación (Dry Run)</div>
+          <span class="badge badge-blue" id="simWindowBadge"></span>
+        </div>
+        <div id="simSummaryText" style="margin-bottom: 12px; font-size: 13.5px;"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Decisión</th>
+                <th>Archivo</th>
+                <th>Fecha del Archivo</th>
+                <th>Tamaño</th>
+                <th>Motivo / Regla Aplicada</th>
+              </tr>
+            </thead>
+            <tbody id="simTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: EXECUTION HISTORY & LOGS -->
+    <section id="tab-history" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📜 Historial de Ejecuciones y Simulaciones</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadAllData()">🔄 Refrescar</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;">
+          Además de esta tabla, cada ejecución guarda un archivo <code>.log</code> detallado dentro de la carpeta <code>logs/</code> junto al archivo <code>AutoCleanerServer.exe</code>.
+        </p>
+        <div id="historyContainer" class="task-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: WINDOWS SERVER INTEGRATION -->
+    <section id="tab-winserver" class="hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">🖥️ Cómo funciona en tu Windows Server</div>
+        </div>
+        <div class="grid-2">
+          <div class="form-section">
+            <div class="form-section-title">✅ Modo 1: Programador de Tareas de Windows (Recomendado)</div>
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 10px;">
+              Al marcar la casilla <strong>"Registrar en el Programador de Tareas de Windows Server (schtasks)"</strong>, cada tarea que guardas queda registrada en el sistema operativo Windows bajo la carpeta <code>\AutoCleanerServer\</code>.
+            </p>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Windows Server invocará automáticamente:<br/>
+              <code class="mono" style="color:#93c5fd;">AutoCleanerServer.exe --run-task &lt;ID_TAREA&gt;</code><br/>
+              en modo silencioso (sin abrir ventanas) a la hora exacta configurada.
+            </p>
+          </div>
+          <div class="form-section">
+            <div class="form-section-title">⚡ Modo 2: Demonio Continuo en Segundo Plano</div>
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 10px;">
+              También puedes iniciar el programa al arrancar Windows Server con el parámetro:
+            </p>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              <code class="mono" style="color:#6ee7b7;">AutoCleanerServer.exe --daemon</code><br/>
+              En este modo queda residente en segundo plano sin ventana emergente y evalúa todas las tareas cada minuto.
+            </p>
+          </div>
+        </div>
+
+        <div class="form-section" style="margin-top: 8px;">
+          <div class="form-section-title">📋 Comandos <code>schtasks.exe</code> Generados para tus Tareas</div>
+          <div id="schtasksCommandsList" class="mono" style="font-size: 12.5px; color: #cbd5e1; display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Folder Browser Modal -->
+  <div class="modal-backdrop" id="folderModal">
+    <div class="modal">
+      <div class="panel-header" style="padding: 14px 20px; margin: 0;">
+        <div class="panel-title">📁 Explorador de Carpetas del Servidor</div>
+        <button class="btn btn-secondary btn-sm" onclick="closeFolderBrowser()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="browserCurrentPath" class="mono" style="flex:1;" placeholder="Ruta actual..." />
+          <button class="btn btn-secondary btn-sm" onclick="browseToInputPath()">Ir</button>
+          <button class="btn btn-secondary btn-sm" onclick="browseParentDir()">⬆️ Subir nivel</button>
+        </div>
+        <div id="browserDrivesBar" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div id="browserDirsList" style="border:1px solid var(--border); border-radius:8px; max-height:320px; overflow-y:auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeFolderBrowser()">Cancelar</button>
+        <button class="btn btn-primary" onclick="selectCurrentBrowsedFolder()">✔ Seleccionar esta carpeta</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toastBox"></div>
+
+  <script>
+    let allTasks = [];
+    let allHistory = [];
+    let parentPathCache = "";
+
+    function showToast(msg) {
+      const el = document.getElementById('toastBox');
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    function switchTab(tabId) {
+      ['dashboard', 'editor', 'history', 'winserver'].forEach(id => {
+        document.getElementById('tab-' + id).classList.toggle('hidden', id !== tabId);
+        document.getElementById('tabBtn-' + id).classList.toggle('active', id === tabId);
+      });
+    }
+
+    async function loadAllData() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        allTasks = data.tasks || [];
+        allHistory = data.history || [];
+        if (data.os === 'windows') {
+          const dlBtn = document.getElementById('downloadExeBtn');
+          if (dlBtn) dlBtn.classList.add('hidden');
+        }
+        document.getElementById('statServerClock').textContent = 'Hora servidor: ' + (data.server_time || '');
+        renderDashboard();
+        renderHistory();
+        renderSchtasksList(data.exe_path || 'C:\\AutoCleanerServer\\AutoCleanerServer.exe');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderDashboard() {
+      document.getElementById('statTotalTasks').textContent = allTasks.length;
+      const activeCount = allTasks.filter(t => t.enabled).length;
+      document.getElementById('statActiveTasks').textContent = activeCount + ' activas programadas';
+
+      let totalDeleted = 0;
+      let totalBytes = 0;
+      allHistory.forEach(h => {
+        if (!h.dry_run) {
+          totalDeleted += (h.files_to_delete || 0);
+          totalBytes += (h.bytes_freed || 0);
+        }
+      });
+      document.getElementById('statDeletedFiles').textContent = totalDeleted.toLocaleString();
+      document.getElementById('statFreedSpace').textContent = formatBytesJS(totalBytes);
+
+      const box = document.getElementById('tasksContainer');
+      if (allTasks.length === 0) {
+        box.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+            <div style="font-size:34px; margin-bottom:8px;">🗂️</div>
+            <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px;">Aún no hay tareas de borrado configuradas</div>
+            <p style="margin-bottom:16px;">Pulsa en <strong>"🧪 Crear Carpeta Demo + Ejemplo Día 1 del Mes"</strong> arriba para ver un ejemplo funcionando al instante, o crea tu primera tarea.</p>
+            <button class="btn btn-primary" onclick="openNewTaskEditor()">➕ Crear Primera Tarea</button>
+          </div>`;
+        return;
+      }
+
+      box.innerHTML = allTasks.map(t => {
+        const statusBadge = t.enabled
+          ? `<span class="badge badge-green">● Activa</span>`
+          : `<span class="badge badge-gray">⏸ Pausada</span>`;
+        const schedBadge = `<span class="badge badge-blue">🕒 ${describeScheduleShort(t)}</span>`;
+        const ruleBadge = `<span class="badge badge-yellow">📅 ${describeDateRuleShort(t)}</span>`;
+        const keepBadge = describeKeepShort(t)
+          ? `<span class="badge badge-green">🛡️ Deja: ${escapeHtml(describeKeepShort(t))}</span>`
+          : '';
+
+        return `
+          <div class="task-item">
+            <div style="flex:1; min-width:260px;">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <strong style="font-size:15px;">${escapeHtml(t.name)}</strong>
+                ${statusBadge}
+              </div>
+              <div class="mono" style="font-size:12.5px; color:#93c5fd; margin-top:4px;">📁 ${escapeHtml(t.folder_path)}</div>
+              <div class="task-meta">
+                ${schedBadge}
+                ${ruleBadge}
+                ${keepBadge}
+              </div>
+              ${t.last_run_at ? `<div style="font-size:11.5px; color:var(--text-muted); margin-top:6px;">Última ejecución: ${escapeHtml(t.last_run_at)} — ${escapeHtml(t.last_run_status || '')}</div>` : ''}
+            </div>
+            <div style="display:flex; gap:7px; flex-wrap:wrap; align-items:center;">
+              <button class="btn btn-warning btn-sm" onclick="runTaskById('${t.id}', true)">🔍 Simular</button>
+              <button class="btn btn-success btn-sm" onclick="runTaskById('${t.id}', false)">⚡ Ejecutar Ahora</button>
+              <button class="btn btn-secondary btn-sm" onclick="editTask('${t.id}')">✏️ Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHistory() {
+      const box = document.getElementById('historyContainer');
+      if (allHistory.length === 0) {
+        box.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-muted);">No hay ejecuciones ni simulaciones registradas todavía.</div>`;
+        return;
+      }
+      box.innerHTML = allHistory.map(h => {
+        const modeBadge = h.dry_run
+          ? `<span class="badge badge-yellow">🔍 SIMULACIÓN (Dry Run)</span>`
+          : `<span class="badge badge-green">⚡ EJECUCIÓN REAL</span>`;
+        return `
+          <div class="task-item" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <strong>${escapeHtml(h.task_name)}</strong>
+                <span style="color:var(--text-muted); font-size:12px; margin-left:8px;">${escapeHtml(h.executed_at)}</span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                ${modeBadge}
+                <span class="badge badge-blue">Ventana: ${escapeHtml(h.effective_window || '')}</span>
+              </div>
+            </div>
+            <div style="font-size:13px; margin-top:6px; color:#cbd5e1;">
+              📁 <span class="mono">${escapeHtml(h.folder_path)}</span> — <strong>${escapeHtml(h.message)}</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSchtasksList(exePath) {
+      const box = document.getElementById('schtasksCommandsList');
+      if (allTasks.length === 0) {
+        box.innerHTML = `<div>Crea una tarea primero para ver su comando de Windows Task Scheduler.</div>`;
+        return;
+      }
+      box.innerHTML = allTasks.map(t => {
+        const cmd = `schtasks /Create /F /TN "\\AutoCleanerServer\\${t.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_${t.id}" /TR "\\"${exePath}\\" --run-task ${t.id}" /SC ${t.schedule_type.toUpperCase()} /ST ${t.run_time || '02:00'}`;
+        return `<div style="background:#0f172a; padding:10px 12px; border-radius:6px; border:1px solid var(--border);">
+          <div style="color:#93c5fd; font-weight:600; margin-bottom:4px;">Tarea: ${escapeHtml(t.name)}</div>
+          <code>${escapeHtml(cmd)}</code>
+        </div>`;
+      }).join('');
+    }
+
+    function onScheduleTypeChange() {
+      const st = document.getElementById('schedule_type').value;
+      document.getElementById('wrap_day_of_month').classList.toggle('hidden', st !== 'monthly');
+      document.getElementById('wrap_day_of_week').classList.toggle('hidden', st !== 'weekly');
+      document.getElementById('wrap_once_date').classList.toggle('hidden', st !== 'once');
+      document.getElementById('wrap_run_time').classList.toggle('hidden', st === 'manual');
+      updateSummary();
+    }
+
+    function onDateRuleChange() {
+      const dr = document.getElementById('date_rule_type').value;
+      document.getElementById('wrap_prev_month').classList.toggle('hidden', dr !== 'prev_month' && dr !== 'current_month_days');
+      document.getElementById('wrap_date_range').classList.toggle('hidden', dr !== 'date_range');
+      document.getElementById('wrap_older_days').classList.toggle('hidden', dr !== 'older_than_days');
+      updateSummary();
+    }
+
+    function collectEditorTask() {
+      return {
+        id: document.getElementById('task_id').value || '',
+        name: document.getElementById('task_name').value.trim() || 'Tarea de Borrado',
+        folder_path: document.getElementById('folder_path').value.trim(),
+        enabled: document.getElementById('task_enabled').checked,
+        schedule_type: document.getElementById('schedule_type').value,
+        day_of_month: parseInt(document.getElementById('day_of_month').value || '1', 10),
+        day_of_week: parseInt(document.getElementById('day_of_week').value || '1', 10),
+        run_time: document.getElementById('run_time').value || '02:00',
+        once_date: document.getElementById('once_date').value || '',
+        sync_win_task: document.getElementById('sync_win_task').checked,
+        date_field: document.getElementById('date_field').value,
+        date_rule_type: document.getElementById('date_rule_type').value,
+        date_from: document.getElementById('date_from').value || '',
+        date_to: document.getElementById('date_to').value || '',
+        prev_month_day_from: parseInt(document.getElementById('prev_month_day_from').value || '1', 10),
+        prev_month_day_to: parseInt(document.getElementById('prev_month_day_to').value || '31', 10),
+        older_than_days: parseInt(document.getElementById('older_than_days').value || '30', 10),
+        include_subfolders: document.getElementById('include_subfolders').checked,
+        remove_empty_folders: document.getElementById('remove_empty_folders').checked,
+        target_extensions: document.getElementById('target_extensions').value.trim(),
+        target_name_patterns: document.getElementById('target_name_patterns').value.trim(),
+        keep_name_patterns: document.getElementById('keep_name_patterns').value.trim(),
+        keep_extensions: document.getElementById('keep_extensions').value.trim(),
+        keep_date_from: document.getElementById('keep_date_from').value || '',
+        keep_date_to: document.getElementById('keep_date_to').value || '',
+        keep_days_of_month: document.getElementById('keep_days_of_month').value.trim(),
+        keep_first_of_month: document.getElementById('keep_first_of_month').checked,
+        keep_last_of_month: document.getElementById('keep_last_of_month').checked,
+        keep_newest_count: parseInt(document.getElementById('keep_newest_count').value || '0', 10),
+        keep_recent_days: parseInt(document.getElementById('keep_recent_days').value || '0', 10),
+      };
+    }
+
+    function updateSummary() {
+      const t = collectEditorTask();
+      const folder = t.folder_path || '[Selecciona una carpeta]';
+      const sched = describeScheduleShort(t);
+      const dateDesc = describeDateRuleShort(t);
+      const keepDesc = describeKeepShort(t);
+
+      let html = `📌 <strong>Resumen de tu regla:</strong> Se ejecutará <strong>${escapeHtml(sched)}</strong> sobre la carpeta <code class="mono">${escapeHtml(folder)}</code>. `;
+      html += `Ahí <span class="del-highlight">BORRARÁ los archivos con fecha: ${escapeHtml(dateDesc)}</span>`;
+      if (t.target_extensions) html += ` (extensiones: <code>${escapeHtml(t.target_extensions)}</code>)`;
+      if (t.target_name_patterns) html += ` (nombres: <code>${escapeHtml(t.target_name_patterns)}</code>)`;
+      if (keepDesc) {
+        html += `, y <span class="keep-highlight">SOLO DEJARÁ INTACTOS: ${escapeHtml(keepDesc)}</span>.`;
+      } else {
+        html += ` (sin excepciones de retención activas).`;
+      }
+      document.getElementById('nlRuleSummary').innerHTML = html;
+    }
+
+    function describeScheduleShort(t) {
+      const hm = t.run_time || '02:00';
+      if (t.schedule_type === 'monthly') {
+        if (t.day_of_month === 0) return `El último día de cada mes a las ${hm}`;
+        return `El día ${t.day_of_month} de cada mes a las ${hm}`;
+      }
+      if (t.schedule_type === 'weekly') {
+        const names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        return `Cada ${names[t.day_of_week] || 'Lunes'} a las ${hm}`;
+      }
+      if (t.schedule_type === 'daily') return `Todos los días a las ${hm}`;
+      if (t.schedule_type === 'once') return `El día ${t.once_date || '(sin fecha)'} a las ${hm}`;
+      return 'Manualmente';
+    }
+
+    function describeDateRuleShort(t) {
+      if (t.date_rule_type === 'prev_month') {
+        return `Del día ${t.prev_month_day_from || 1} al ${t.prev_month_day_to || 31} del mes anterior`;
+      }
+      if (t.date_rule_type === 'date_range') {
+        return `Desde ${t.date_from || '?'} hasta ${t.date_to || '?'}`;
+      }
+      if (t.date_rule_type === 'older_than_days') {
+        return `Antigüedad mayor a ${t.older_than_days || 30} días`;
+      }
+      if (t.date_rule_type === 'current_month_days') {
+        return `Del día ${t.prev_month_day_from || 1} al ${t.prev_month_day_to || 31} del mes actual`;
+      }
+      return 'Todas las fechas';
+    }
+
+    function describeKeepShort(t) {
+      const parts = [];
+      if (t.keep_name_patterns) parts.push(`nombres [${t.keep_name_patterns}]`);
+      if (t.keep_extensions) parts.push(`ext [${t.keep_extensions}]`);
+      if (t.keep_first_of_month) parts.push('archivos del día 1 del mes');
+      if (t.keep_last_of_month) parts.push('archivos del último día del mes');
+      if (t.keep_days_of_month) parts.push(`días del mes [${t.keep_days_of_month}]`);
+      if (t.keep_date_from && t.keep_date_to) parts.push(`fechas ${t.keep_date_from} a ${t.keep_date_to}`);
+      if (t.keep_newest_count > 0) parts.push(`los ${t.keep_newest_count} más recientes`);
+      if (t.keep_recent_days > 0) parts.push(`últimos ${t.keep_recent_days} días`);
+      return parts.join(' + ');
+    }
+
+    function openNewTaskEditor() {
+      document.getElementById('editorTitle').textContent = '➕ Crear Nueva Tarea de Borrado';
+      document.getElementById('task_id').value = '';
+      document.getElementById('task_name').value = 'Limpieza Mensual Día 1';
+      document.getElementById('folder_path').value = '';
+      document.getElementById('task_enabled').checked = true;
+      document.getElementById('schedule_type').value = 'monthly';
+      document.getElementById('day_of_month').value = '1';
+      document.getElementById('run_time').value = '02:00';
+      document.getElementById('sync_win_task').checked = true;
+      document.getElementById('date_field').value = 'modified';
+      document.getElementById('date_rule_type').value = 'prev_month';
+      document.getElementById('prev_month_day_from').value = '1';
+      document.getElementById('prev_month_day_to').value = '31';
+      document.getElementById('target_extensions').value = '';
+      document.getElementById('target_name_patterns').value = '';
+      document.getElementById('keep_name_patterns').value = '';
+      document.getElementById('keep_extensions').value = '';
+      document.getElementById('keep_days_of_month').value = '';
+      document.getElementById('keep_date_from').value = '';
+      document.getElementById('keep_date_to').value = '';
+      document.getElementById('keep_first_of_month').checked = false;
+      document.getElementById('keep_last_of_month').checked = true;
+      document.getElementById('keep_newest_count').value = '0';
+      document.getElementById('keep_recent_days').value = '0';
+      document.getElementById('simulationResultPanel').classList.add('hidden');
+      onScheduleTypeChange();
+      onDateRuleChange();
+      switchTab('editor');
+    }
+
+    function editTask(id) {
+      const t = allTasks.find(x => x.id === id);
+      if (!t) return;
+      document.getElementById('editorTitle').textContent = '✏️ Editar Tarea: ' + t.name;
+      document.getElementById('task_id').value = t.id;
+      document.getElementById('task_name').value = t.name || '';
+      document.getElementById('folder_path').value = t.folder_path || '';
+      document.getElementById('task_enabled').checked = !!t.enabled;
+      document.getElementById('schedule_type').value = t.schedule_type || 'monthly';
+      document.getElementById('day_of_month').value = String(t.day_of_month ?? 1);
+      document.getElementById('day_of_week').value = String(t.day_of_week ?? 1);
+      document.getElementById('run_time').value = t.run_time || '02:00';
+      document.getElementById('once_date').value = t.once_date || '';
+      document.getElementById('sync_win_task').checked = !!t.sync_win_task;
+      document.getElementById('date_field').value = t.date_field || 'modified';
+      document.getElementById('date_rule_type').value = t.date_rule_type || 'prev_month';
+      document.getElementById('date_from').value = t.date_from || '';
+      document.getElementById('date_to').value = t.date_to || '';
+      document.getElementById('prev_month_day_from').value = String(t.prev_month_day_from || 1);
+      document.getElementById('prev_month_day_to').value = String(t.prev_month_day_to || 31);
+      document.getElementById('older_than_days').value = String(t.older_than_days || 30);
+      document.getElementById('include_subfolders').checked = !!t.include_subfolders;
+      document.getElementById('remove_empty_folders').checked = !!t.remove_empty_folders;
+      document.getElementById('target_extensions').value = t.target_extensions || '';
+      document.getElementById('target_name_patterns').value = t.target_name_patterns || '';
+      document.getElementById('keep_name_patterns').value = t.keep_name_patterns || '';
+      document.getElementById('keep_extensions').value = t.keep_extensions || '';
+      document.getElementById('keep_date_from').value = t.keep_date_from || '';
+      document.getElementById('keep_date_to').value = t.keep_date_to || '';
+      document.getElementById('keep_days_of_month').value = t.keep_days_of_month || '';
+      document.getElementById('keep_first_of_month').checked = !!t.keep_first_of_month;
+      document.getElementById('keep_last_of_month').checked = !!t.keep_last_of_month;
+      document.getElementById('keep_newest_count').value = String(t.keep_newest_count || 0);
+      document.getElementById('keep_recent_days').value = String(t.keep_recent_days || 0);
+      document.getElementById('simulationResultPanel').classList.add('hidden');
+      onScheduleTypeChange();
+      onDateRuleChange();
+      switchTab('editor');
+    }
+
+    async function saveTaskFromEditor() {
+      const task = collectEditorTask();
+      if (!task.folder_path) {
+        alert('Por favor ingresa o selecciona la ruta de la carpeta a limpiar.');
+        return;
+      }
+      const res = await fetch('/api/tasks/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Error al guardar la tarea');
+        return;
+      }
+      showToast('✅ Tarea guardada correctamente (' + (data.win_scheduler || '') + ')');
+      await loadAllData();
+      switchTab('dashboard');
+    }
+
+    async function simulateCurrentEditorTask() {
+      const task = collectEditorTask();
+      if (!task.folder_path) {
+        alert('Primero selecciona o escribe la ruta de la carpeta para poder simular.');
+        return;
+      }
+      const res = await fetch('/api/tasks/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      });
+      const rep = await res.json();
+      renderSimulationReport(rep);
+    }
+
+    async function runTaskById(id, dryRun) {
+      if (!dryRun && !confirm('¿Estás seguro de ejecutar el BORRADO REAL ahora mismo sobre esta carpeta?')) {
+        return;
+      }
+      const res = await fetch('/api/tasks/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, dry_run: dryRun })
+      });
+      const rep = await res.json();
+      await loadAllData();
+      editTask(id);
+      renderSimulationReport(rep);
+      showToast(rep.message || 'Operación completada');
+    }
+
+    function renderSimulationReport(rep) {
+      const panel = document.getElementById('simulationResultPanel');
+      panel.classList.remove('hidden');
+      document.getElementById('simTitle').textContent = rep.dry_run
+        ? '🔍 Vista Previa de Simulación (Dry Run — Ningún archivo fue borrado aún)'
+        : '⚡ Resultado de Ejecución Real';
+      document.getElementById('simWindowBadge').textContent = 'Ventana evaluada: ' + (rep.effective_window || '');
+
+      const color = rep.status === 'ERROR' ? '#fca5a5' : '#93c5fd';
+      document.getElementById('simSummaryText').innerHTML = `<strong style="color:${color};">${escapeHtml(rep.message || '')}</strong>`;
+
+      const tbody = document.getElementById('simTableBody');
+      const decisions = rep.decisions || [];
+      if (decisions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No se encontraron archivos en la carpeta seleccionada.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = decisions.map(d => {
+        let badge = '';
+        if (d.action === 'DELETE') badge = `<span class="badge badge-red">🗑️ SE BORRARÁ</span>`;
+        else if (d.action === 'DELETED') badge = `<span class="badge badge-red">✔ BORRADO</span>`;
+        else if (d.action === 'KEEP') badge = `<span class="badge badge-green">🛡️ SE CONSERVA</span>`;
+        else badge = `<span class="badge badge-yellow">⚠️ ERROR</span>`;
+
+        return `<tr>
+          <td>${badge}</td>
+          <td class="mono">${escapeHtml(d.rel_path || d.name)}</td>
+          <td class="mono">${escapeHtml(d.file_datetime || d.file_date)}</td>
+          <td class="mono">${formatBytesJS(d.size || 0)}</td>
+          <td>${escapeHtml(d.reason || '')}</td>
+        </tr>`;
+      }).join('');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('¿Eliminar esta tarea programada?')) return;
+      await fetch('/api/tasks/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      showToast('🗑️ Tarea eliminada');
+      await loadAllData();
+    }
+
+    async function createDemoScenario() {
+      const res = await fetch('/api/demo/create', { method: 'POST' });
+      const data = await res.json();
+      if (data.task) {
+        await loadAllData();
+        editTask(data.task.id);
+        if (data.preview) {
+          renderSimulationReport(data.preview);
+        }
+        showToast('🧪 Carpeta Demo y tarea de ejemplo creadas. ¡Mira la simulación abajo!');
+      }
+    }
+
+    // Folder Browser Modal Logic
+    async function openFolderBrowser() {
+      document.getElementById('folderModal').classList.add('open');
+      const cur = document.getElementById('folder_path').value.trim();
+      await browsePath(cur);
+    }
+
+    function closeFolderBrowser() {
+      document.getElementById('folderModal').classList.remove('open');
+    }
+
+    async function browsePath(pathStr) {
+      const res = await fetch('/api/fs/browse?path=' + encodeURIComponent(pathStr || ''));
+      const data = await res.json();
+      document.getElementById('browserCurrentPath').value = data.current_path || '';
+      parentPathCache = data.parent_path || '';
+
+      const drivesBar = document.getElementById('browserDrivesBar');
+      drivesBar.innerHTML = (data.drives || []).map(drv =>
+        `<button type="button" class="btn btn-secondary btn-sm mono" onclick="browsePath('${drv.replace(/\\/g, '\\\\')}')">💽 ${escapeHtml(drv)}</button>`
+      ).join('');
+
+      const list = document.getElementById('browserDirsList');
+      const dirs = data.directories || [];
+      if (dirs.length === 0) {
+        list.innerHTML = `<div style="padding:16px; color:var(--text-muted); text-align:center;">No hay subcarpetas dentro de esta ruta.</div>`;
+      } else {
+        list.innerHTML = dirs.map(d => `
+          <div class="dir-item" onclick="browsePath('${d.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">
+            <span>📁 ${escapeHtml(d.name)}</span>
+            <span style="color:var(--text-muted); font-size:12px;">Abrir →</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function browseToInputPath() {
+      browsePath(document.getElementById('browserCurrentPath').value.trim());
+    }
+
+    function browseParentDir() {
+      if (parentPathCache) browsePath(parentPathCache);
+    }
+
+    function selectCurrentBrowsedFolder() {
+      const chosen = document.getElementById('browserCurrentPath').value.trim();
+      if (chosen) {
+        document.getElementById('folder_path').value = chosen;
+        updateSummary();
+      }
+      closeFolderBrowser();
+    }
+
+    function formatBytesJS(bytes) {
+      if (!bytes || bytes <= 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    loadAllData();
+  </script>
+</body>
+</html>
